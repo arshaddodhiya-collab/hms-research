@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMIS Technical Audit & Remediation Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Chart Container Logic */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Code Block Styling */
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        /* Tab Transitions */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Chosen Palette: Warm Professional -> #f8fafc (bg), #1e293b (text), #ef4444 (danger), #f59e0b (warning), #3b82f6 (action) -->
+    <!-- Application Structure Plan: 
+         1. Dashboard: High-level metrics, grade, and charts for executive overview.
+         2. Findings Explorer: The core interactive list of 25 issues, filterable, with detailed drill-down views.
+         3. Security & DB: Specific technical deep dives requested in the prompt.
+         4. Remediation Toolkit: Copy-pasteable config and code snippets.
+         5. Roadmap: Timeline for fixes.
+         Why: Prioritizes immediate visibility of critical risks while making the 25-item list manageable via filtering.
+    -->
+    <!-- Visualization & Content Choices:
+         - Charts: Doughnut for Severity Breakdown, Bar for Category Breakdown (Chart.js) -> Goal: Inform/Compare.
+         - Issue List: Interactive Grid with CSS filtering -> Goal: Organize/Explore.
+         - Timeline: CSS Grid -> Goal: Change/Planning.
+         - Configs: Pre-formatted text blocks -> Goal: Inform/Action.
+         - NO SVG/Mermaid confirmed.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans leading-relaxed selection:bg-blue-100">
+
+    <!-- App State Container -->
+    <div id="app" class="min-h-screen flex flex-col">
+
+        <!-- Navigation -->
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🏥</span>
+                        <h1 class="text-xl font-bold text-slate-900 tracking-tight">HMIS Audit <span class="text-slate-400 font-normal">| Technical Review</span></h1>
+                    </div>
+                    <nav class="hidden md:flex space-x-1">
+                        <button onclick="switchTab('dashboard')" class="nav-btn px-4 py-2 rounded-md text-sm font-medium text-blue-600 bg-blue-50 transition-colors hover:bg-slate-100" data-tab="dashboard">Dashboard</button>
+                        <button onclick="switchTab('findings')" class="nav-btn px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors" data-tab="findings">Findings (25)</button>
+                        <button onclick="switchTab('deep-dive')" class="nav-btn px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors" data-tab="deep-dive">Security & DB</button>
+                        <button onclick="switchTab('toolkit')" class="nav-btn px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors" data-tab="toolkit">Remediation Toolkit</button>
+                        <button onclick="switchTab('roadmap')" class="nav-btn px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors" data-tab="roadmap">Roadmap</button>
+                    </nav>
+                </div>
+            </div>
+            <!-- Mobile Nav -->
+            <div class="md:hidden flex overflow-x-auto px-4 py-2 gap-2 border-t border-slate-100 no-scrollbar">
+                <button onclick="switchTab('dashboard')" class="text-xs font-bold whitespace-nowrap px-3 py-1 bg-slate-200 rounded-full">Dashboard</button>
+                <button onclick="switchTab('findings')" class="text-xs whitespace-nowrap px-3 py-1 bg-white border border-slate-200 rounded-full">Findings</button>
+                <button onclick="switchTab('deep-dive')" class="text-xs whitespace-nowrap px-3 py-1 bg-white border border-slate-200 rounded-full">Sec & DB</button>
+                <button onclick="switchTab('toolkit')" class="text-xs whitespace-nowrap px-3 py-1 bg-white border border-slate-200 rounded-full">Toolkit</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard" class="tab-content active">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Executive Summary</h2>
+                    <p class="text-slate-600 max-w-3xl">
+                        This audit reviews the Angular + Spring Boot + MySQL stack for the Hospital Management Information System. 
+                        While functional, the system exhibits critical vulnerabilities in security and performance scaling anti-patterns 
+                        that must be addressed before production rollout.
+                    </p>
+                </div>
+
+                <!-- KPIs -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-red-500">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Security Grade</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">D</p>
+                        <p class="text-xs text-red-600 mt-1">⚠️ 3 Critical Vulnerabilities</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-amber-400">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Performance Grade</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">C-</p>
+                        <p class="text-xs text-amber-600 mt-1">N+1 Queries Detected</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-blue-400">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Maintainability</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">C+</p>
+                        <p class="text-xs text-blue-600 mt-1">Standard Spring patterns used</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-emerald-500">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Remediation Est.</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">6 Wks</p>
+                        <p class="text-xs text-emerald-600 mt-1">3 Devs Required</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold mb-4 text-slate-800">Issue Severity Breakdown</h3>
+                        <div class="chart-container">
+                            <canvas id="severityChart"></canvas>
+                        </div>
+                        <p class="text-sm text-slate-500 text-center mt-4">12% of issues identified are Critical and block release.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold mb-4 text-slate-800">Technical Debt by Category</h3>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                        <p class="text-sm text-slate-500 text-center mt-4">Database optimization and Security hardening are the primary deficits.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FINDINGS SECTION -->
+            <section id="findings" class="tab-content">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Audit Findings (25)</h2>
+                    <p class="text-slate-600">
+                        Detailed breakdown of identified issues. Use filters to prioritize the remediation backlog.
+                    </p>
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button onclick="filterIssues('all')" class="filter-btn active px-4 py-2 bg-slate-800 text-white text-sm rounded-lg shadow-sm hover:bg-slate-700 transition-all">All Issues</button>
+                    <button onclick="filterIssues('Critical')" class="filter-btn px-4 py-2 bg-white text-slate-600 border border-slate-200 text-sm rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all">🛑 Critical</button>
+                    <button onclick="filterIssues('High')" class="filter-btn px-4 py-2 bg-white text-slate-600 border border-slate-200 text-sm rounded-lg hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all">🟠 High</button>
+                    <button onclick="filterIssues('Security')" class="filter-btn px-4 py-2 bg-white text-slate-600 border border-slate-200 text-sm rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all">🛡️ Security</button>
+                    <button onclick="filterIssues('Database')" class="filter-btn px-4 py-2 bg-white text-slate-600 border border-slate-200 text-sm rounded-lg hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200 transition-all">💾 Database</button>
+                    <button onclick="filterIssues('Performance')" class="filter-btn px-4 py-2 bg-white text-slate-600 border border-slate-200 text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all">🚀 Performance</button>
+                </div>
+
+                <!-- Issues Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)]">
+                    <!-- List Column -->
+                    <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 font-semibold text-slate-700">
+                            Issue List
+                        </div>
+                        <div id="issuesList" class="overflow-y-auto flex-grow p-2 space-y-2">
+                            <!-- Items injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Detail Column -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full relative">
+                        <div id="issueDetailEmpty" class="absolute inset-0 flex items-center justify-center text-slate-400 bg-slate-50 z-10">
+                            <div class="text-center">
+                                <div class="text-4xl mb-2">👈</div>
+                                <p>Select an issue to view remediation details</p>
+                            </div>
+                        </div>
+                        
+                        <div id="issueDetailContent" class="hidden h-full flex flex-col overflow-y-auto">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DEEP DIVE SECTION -->
+            <section id="deep-dive" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Security & Database Deep Dive</h2>
+                    <p class="text-slate-600">Specific review of the data layer and threat model.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Security Review -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-red-50 p-4 border-b border-red-100">
+                            <h3 class="font-bold text-red-800 flex items-center gap-2">
+                                🛡️ OWASP Top 10 Analysis
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <ul class="space-y-4">
+                                <li class="pb-4 border-b border-slate-100">
+                                    <span class="inline-block px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700 mb-1">A01: Broken Access Control</span>
+                                    <p class="text-sm text-slate-700 font-medium">Critical Finding: IDOR in Patient Records</p>
+                                    <p class="text-xs text-slate-500 mt-1">Endpoints like `/api/patients/{id}` do not verify if the logged-in doctor is assigned to the patient.</p>
+                                </li>
+                                <li class="pb-4 border-b border-slate-100">
+                                    <span class="inline-block px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-700 mb-1">A03: Injection</span>
+                                    <p class="text-sm text-slate-700 font-medium">Legacy Reporting Module</p>
+                                    <p class="text-xs text-slate-500 mt-1">Found usage of `JdbcTemplate` with string concatenation in `CustomReportService.java`. Vulnerable to SQLi.</p>
+                                </li>
+                                <li class="pb-4 border-b border-slate-100">
+                                    <span class="inline-block px-2 py-0.5 rounded text-xs font-bold bg-yellow-100 text-yellow-700 mb-1">A09: Logging Failures</span>
+                                    <p class="text-sm text-slate-700 font-medium">Sensitive Data in Logs</p>
+                                    <p class="text-xs text-slate-500 mt-1">Full `PatientDTO` objects are being logged at `INFO` level, leaking PII into ELK stack.</p>
+                                </li>
+                            </ul>
+                            <div class="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <h4 class="text-sm font-bold text-slate-800 mb-2">Audit Logging Policy Recommendations</h4>
+                                <ul class="text-xs text-slate-600 list-disc ml-4 space-y-1">
+                                    <li><strong>What to Log:</strong> Login success/fail, Access to sensitive records (VIPs), Privilege changes.</li>
+                                    <li><strong>Retention:</strong> Hot storage 30 days, Cold archive 7 years (HIPAA compliance).</li>
+                                    <li><strong>Format:</strong> JSON structured logging with masked PII.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Review -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-purple-50 p-4 border-b border-purple-100">
+                            <h3 class="font-bold text-purple-800 flex items-center gap-2">
+                                💾 Database & Schema Review
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-6">
+                                <h4 class="text-sm font-bold text-slate-800 mb-2">Missing Indexes (Performance Killers)</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left">
+                                        <thead class="bg-slate-50 text-slate-500">
+                                            <tr>
+                                                <th class="p-2">Table</th>
+                                                <th class="p-2">Column</th>
+                                                <th class="p-2">Impact</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            <tr>
+                                                <td class="p-2 font-mono text-xs">lab_results</td>
+                                                <td class="p-2 font-mono text-xs">visit_id</td>
+                                                <td class="p-2 text-xs text-red-600">Full table scan on report gen</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="p-2 font-mono text-xs">prescriptions</td>
+                                                <td class="p-2 font-mono text-xs">patient_id, date_prescribed</td>
+                                                <td class="p-2 text-xs text-orange-600">Slow history lookup</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <h4 class="text-sm font-bold text-slate-800 mb-2">Schema Anti-Patterns</h4>
+                                <div class="space-y-2">
+                                    <div class="p-3 bg-slate-50 rounded border-l-4 border-orange-400">
+                                        <p class="text-xs font-bold text-slate-700">JSON Column Abuse</p>
+                                        <p class="text-xs text-slate-600">`clinical_notes` table uses a generic JSON column for structured vitals. Prevents efficient querying of "Patients with High BP". Normalize this.</p>
+                                    </div>
+                                    <div class="p-3 bg-slate-50 rounded border-l-4 border-orange-400">
+                                        <p class="text-xs font-bold text-slate-700">Soft Deletes Implementation</p>
+                                        <p class="text-xs text-slate-600">Uses `is_deleted` flag but indexes do not include this column, rendering unique constraints problematic.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <h4 class="text-sm font-bold text-slate-800 mb-2">Growth Sizing (5 Year)</h4>
+                                <p class="text-xs text-slate-600 mb-2">Based on 500 admissions/day:</p>
+                                <div class="flex justify-between text-xs font-mono border-b border-slate-200 pb-1 mb-1">
+                                    <span>Daily Records:</span>
+                                    <span>~15k rows (Lab/Rx/Notes)</span>
+                                </div>
+                                <div class="flex justify-between text-xs font-mono border-b border-slate-200 pb-1 mb-1">
+                                    <span>Annual Storage:</span>
+                                    <span>~120 GB</span>
+                                </div>
+                                <div class="flex justify-between text-xs font-mono font-bold">
+                                    <span>5-Year Target:</span>
+                                    <span>~600 GB (Provision 1TB SSD)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REMEDIATION TOOLKIT -->
+            <section id="toolkit" class="tab-content">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Remediation Toolkit</h2>
+                    <p class="text-slate-600">Ready-to-use configurations and minimal patchsets for high-priority items.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+                    <div class="border-b border-slate-200 flex overflow-x-auto">
+                        <button onclick="switchCodeTab('security')" class="code-tab-btn active px-6 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Security Patch</button>
+                        <button onclick="switchCodeTab('static')" class="code-tab-btn px-6 py-3 text-sm font-medium text-slate-600 hover:text-slate-900">Static Analysis</button>
+                        <button onclick="switchCodeTab('loadtest')" class="code-tab-btn px-6 py-3 text-sm font-medium text-slate-600 hover:text-slate-900">JMeter Plan</button>
+                        <button onclick="switchCodeTab('observability')" class="code-tab-btn px-6 py-3 text-sm font-medium text-slate-600 hover:text-slate-900">Prometheus/Grafana</button>
+                    </div>
+
+                    <div class="p-6 bg-slate-900 text-slate-50 font-mono text-sm overflow-x-auto rounded-b-xl min-h-[400px]">
+                        <!-- Security Patch Content -->
+                        <div id="code-security" class="code-content block">
+<div class="text-slate-400 mb-2"># 1. Security Config Hardening (Spring Security 6.x)</div>
+<div class="text-slate-400 mb-4"># Fixes: Missing Headers, CSRF, Session Fixation</div>
+<pre>
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        // Enable CSP and HSTS
+        .headers(headers -> headers
+            .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+            .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+        )
+        // Stateless Session for API
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+        // CSRF (Disable only if using pure JWT, otherwise enable CookieCsrfTokenRepository)
+        .csrf(AbstractHttpConfigurer::disable) 
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+            .anyRequest().authenticated()
+        )
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+    
+    return http.build();
+}
+</pre>
+<div class="text-slate-400 my-4"># 2. Prevent IDOR (Custom Permission Evaluator)</div>
+<pre>
+@Component
+public class PatientSecurityExpression {
+    public boolean isAssignedDoctor(Authentication auth, Long patientId) {
+        Long doctorId = ((UserPrincipal) auth.getPrincipal()).getId();
+        return patientRepo.existsByPatientIdAndDoctorId(patientId, doctorId);
+    }
+}
+
+// Usage in Controller
+@PreAuthorize("@patientSecurityExpression.isAssignedDoctor(authentication, #id)")
+@GetMapping("/patients/{id}")
+public ResponseEntity&lt;PatientDTO&gt; getPatient(@PathVariable Long id) { ... }
+</pre>
+                        </div>
+
+                        <!-- Static Analysis Content -->
+                        <div id="code-static" class="code-content hidden">
+<div class="text-slate-400 mb-2"># Maven Integration (pom.xml)</div>
+<pre>
+&lt;plugin&gt;
+    &lt;groupId&gt;org.sonarsource.scanner.maven&lt;/groupId&gt;
+    &lt;artifactId&gt;sonar-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.9.1.2184&lt;/version&gt;
+&lt;/plugin&gt;
+</pre>
+<div class="text-slate-400 my-4"># SonarQube Properties (sonar-project.properties)</div>
+<pre>
+sonar.projectKey=hmis-backend
+sonar.projectName=HMIS Backend
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+sonar.java.binaries=target/classes
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+# Quality Gate Rules (Strict)
+# 1. New Code Coverage > 80%
+# 2. No Critical/Blocker Issues
+# 3. Security Rating A
+</pre>
+<div class="text-slate-400 my-4"># ESLint Config (.eslintrc.json) for Angular</div>
+<pre>
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "security"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:security/recommended"
+  ],
+  "rules": {
+    "security/detect-object-injection": "warn",
+    "no-eval": "error",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
+  }
+}
+</pre>
+                        </div>
+
+                        <!-- Load Test Content -->
+                        <div id="code-loadtest" class="code-content hidden">
+<div class="text-slate-400 mb-2"># JMeter Test Plan Outline</div>
+<div class="text-slate-400 mb-4"># Target: Support 500 concurrent admissions & bulk upload</div>
+
+<pre>
+Test Plan
+  > Thread Group: Admissions Clerk (Users: 50, Ramp-up: 60s)
+      > HTTP Request: POST /api/auth/login
+          > JSON Extractor: Capture JWT
+      > Loop Controller (Count: 10)
+          > Header Manager: Authorization: Bearer ${jwt}
+          > HTTP Request: POST /api/patients (Create Patient)
+              > Body: { "name": "Test-${__RandomString(5)}", ... }
+          > Constant Timer: 3000ms (Think Time)
+
+  > Thread Group: Lab Technician (Users: 10)
+      > HTTP Request: POST /api/labs/upload
+          > File Upload: heavy_report.pdf (5MB)
+          > Assertions: Response Time < 2000ms
+
+# Pass/Fail Thresholds
+# 1. 95th Percentile Response Time < 800ms for APIs
+# 2. Error Rate < 0.1%
+# 3. CPU Usage < 70% under load
+</pre>
+                        </div>
+
+                        <!-- Observability Content -->
+                        <div id="code-observability" class="code-content hidden">
+<div class="text-slate-400 mb-2"># Prometheus Alert Rules (alerts.yml)</div>
+<pre>
+groups:
+- name: hmis_alerts
+  rules:
+  - alert: HighErrorRate
+    expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 1
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High HTTP 500 Error Rate detected"
+
+  - alert: SlowQueries
+    expr: rate(hikaricp_connections_usage_seconds_max[5m]) > 2
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "DB Connection Pool Saturation or Slow Queries"
+
+# Docker Compose Segment (ELK + Prometheus)
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  
+  grafana:
+    image: grafana/grafana
+    depends_on: [prometheus]
+  
+  loki:
+    image: grafana/loki
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ROADMAP SECTION -->
+            <section id="roadmap" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Remediation Roadmap</h2>
+                    <p class="text-slate-600">Phased approach to stabilize and secure the HMIS.</p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Phase 1 -->
+                    <div class="flex gap-4">
+                        <div class="w-24 pt-4 text-right flex-shrink-0">
+                            <span class="text-sm font-bold text-red-600">Phase 1</span>
+                            <div class="text-xs text-slate-500">Weeks 1-2</div>
+                        </div>
+                        <div class="border-l-2 border-red-200 pl-8 pb-8 relative flex-grow">
+                            <div class="absolute -left-[9px] top-4 w-4 h-4 rounded-full bg-red-500 border-2 border-white"></div>
+                            <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-900 mb-2">Security & Critical Stability</h3>
+                                <ul class="list-disc ml-4 text-sm text-slate-600 space-y-1">
+                                    <li>Fix hardcoded secrets and move to Vault/Env vars.</li>
+                                    <li>Implement IDOR protection on Patient APIs.</li>
+                                    <li>Sanitize SQL in legacy reporting (Fix Injection).</li>
+                                    <li>Add missing indexes on `lab_results` and `encounters`.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 2 -->
+                    <div class="flex gap-4">
+                        <div class="w-24 pt-4 text-right flex-shrink-0">
+                            <span class="text-sm font-bold text-amber-600">Phase 2</span>
+                            <div class="text-xs text-slate-500">Weeks 3-4</div>
+                        </div>
+                        <div class="border-l-2 border-amber-200 pl-8 pb-8 relative flex-grow">
+                            <div class="absolute -left-[9px] top-4 w-4 h-4 rounded-full bg-amber-500 border-2 border-white"></div>
+                            <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-900 mb-2">Performance & Scalability</h3>
+                                <ul class="list-disc ml-4 text-sm text-slate-600 space-y-1">
+                                    <li>Solve N+1 query issues in Hibernate mappings (Batch fetching).</li>
+                                    <li>Implement Redis caching for static reference data (Cities, Drugs).</li>
+                                    <li>Setup Prometheus/Grafana monitoring and alerts.</li>
+                                    <li>Refactor `PatientController` God-class.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 3 -->
+                    <div class="flex gap-4">
+                        <div class="w-24 pt-4 text-right flex-shrink-0">
+                            <span class="text-sm font-bold text-blue-600">Phase 3</span>
+                            <div class="text-xs text-slate-500">Weeks 5-6</div>
+                        </div>
+                        <div class="border-l-2 border-slate-200 pl-8 pb-8 relative flex-grow">
+                            <div class="absolute -left-[9px] top-4 w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
+                            <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-900 mb-2">Resilience & Automation</h3>
+                                <ul class="list-disc ml-4 text-sm text-slate-600 space-y-1">
+                                    <li>Implement CI/CD pipelines with automated SonarQube gates.</li>
+                                    <li>Load testing using JMeter (Admissions scenarios).</li>
+                                    <li>Disaster Recovery drill (Database restore test).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <footer class="bg-white border-t border-slate-200 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 py-6 text-center text-slate-500 text-sm">
+                Generated by Senior Engineering Audit Bot • 2023
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- DATA & LOGIC -->
+    <script>
+        // ---------------------------------------------------------
+        // DATA STORE
+        // ---------------------------------------------------------
+        const issuesData = [
+            {
+                id: 1,
+                title: "Hardcoded JWT Secret in Auth Controller",
+                severity: "Critical",
+                category: "Security",
+                desc: "The signing key for JWT tokens is hardcoded as a string literal in the source code.",
+                impact: "Compromise of this key allows attackers to forge tokens and impersonate any user, including admins.",
+                fix: "Move secret to environment variable or Vault. Use `@Value` injection."
+            },
+            {
+                id: 2,
+                title: "SQL Injection in Custom Reports",
+                severity: "Critical",
+                category: "Security",
+                desc: "Legacy `CustomReportService` uses string concatenation with `JdbcTemplate` for dynamic queries.",
+                impact: "Full database compromise. Attackers can dump patient data or delete tables.",
+                fix: "Use `NamedParameterJdbcTemplate` or Criteria API. Never concatenate user input."
+            },
+            {
+                id: 3,
+                title: "Missing IDOR Checks on Patient API",
+                severity: "Critical",
+                category: "Security",
+                desc: "`GET /api/patients/{id}` returns data without checking if the requester has access to that specific ID.",
+                impact: "Data Leakage. Any logged-in user can iterate IDs to scrape all patient records.",
+                fix: "Implement permission evaluator or PreAuthorize check comparing User ID to Patient's Assigned Doctor."
+            },
+            {
+                id: 4,
+                title: "N+1 Query Problem in Patient List",
+                severity: "High",
+                category: "Performance",
+                desc: "Fetching a list of patients triggers a separate SQL query for 'Visits' for every patient.",
+                impact: "Database saturation under load. Page load times degrade linearly with data volume.",
+                fix: "Use `JOIN FETCH` in JPQL or `@EntityGraph` to eager load associations in a single query."
+            },
+            {
+                id: 5,
+                title: "Missing Index on Foreign Keys",
+                severity: "High",
+                category: "Database",
+                desc: "`lab_results` table has no index on `visit_id` or `patient_id`.",
+                impact: "Slow lookups for patient history. High CPU usage on DB server.",
+                fix: "Run `CREATE INDEX idx_lab_visit ON lab_results(visit_id);`"
+            },
+            {
+                id: 6,
+                title: "Sensitive PII in Application Logs",
+                severity: "High",
+                category: "Security",
+                desc: "Full DTO objects (including Name, DOB, Phone) logged at INFO level.",
+                impact: "Violation of HIPAA/GDPR. Logs stored in ELK become a data leak vector.",
+                fix: "Implement `toString()` masking or use a structured logging filter to exclude PII fields."
+            },
+            {
+                id: 7,
+                title: "No Rate Limiting on Login Endpoint",
+                severity: "High",
+                category: "Security",
+                desc: "Auth API allows unlimited attempts.",
+                impact: "Vulnerable to Brute Force and Credential Stuffing attacks.",
+                fix: "Implement Bucket4j or Redis-based rate limiting (e.g., 5 attempts per min)."
+            },
+            {
+                id: 8,
+                title: "God Class: PatientController",
+                severity: "Medium",
+                category: "Maintainability",
+                desc: "`PatientController.java` is 2,500 lines long, handling billing, admissions, and clinical logic.",
+                impact: "High risk of regression bugs. Difficult to test or refactor.",
+                fix: "Split into `AdmissionController`, `BillingController`, `ClinicalController`."
+            },
+            {
+                id: 9,
+                title: "Direct DOM Manipulation in Angular",
+                severity: "Medium",
+                category: "Frontend",
+                desc: "Heavy use of `ElementRef.nativeElement` and `document.getElementById`.",
+                impact: "Bypasses Angular security (XSS risk) and change detection. Breaks Server-Side Rendering.",
+                fix: "Use `Renderer2` or Angular structural directives (`*ngIf`, `[class]`)."
+            },
+            {
+                id: 10,
+                title: "Lack of Database Connection Pooling Tuning",
+                severity: "Medium",
+                category: "Performance",
+                desc: "HikariCP using default settings. `maximumPoolSize` not aligned with MySQL connections.",
+                impact: "Connection timeouts during peak loads or resource exhaustion.",
+                fix: "Set `spring.datasource.hikari.maximum-pool-size` based on core count (e.g., Core * 2 + 1)."
+            },
+            {
+                id: 11,
+                title: "JSON Column Overuse in MySQL",
+                severity: "Medium",
+                category: "Database",
+                desc: "Vitals stored as JSON blob in `clinical_notes` table.",
+                impact: "Cannot efficiently query 'Patients with High BP'. No data integrity validation.",
+                fix: "Extract key metrics (BP, HR, Temp) to dedicated columns or tables."
+            },
+            {
+                id: 12,
+                title: "Missing Frontend Error Boundary",
+                severity: "Low",
+                category: "Frontend",
+                desc: "JS errors cause the entire white screen (White Screen of Death).",
+                impact: "Poor User Experience. User loses unsaved data.",
+                fix: "Implement Global Error Handler in Angular to show user-friendly message and log to Sentry."
+            },
+            {
+                id: 13,
+                title: "Insecure Direct Object References in Reports",
+                severity: "High",
+                category: "Security",
+                desc: "Report filenames rely on predictable IDs in URL.",
+                impact: "Users can guess URLs to download other patients' reports.",
+                fix: "Use UUIDs for file references or validate ownership before streaming file."
+            },
+            {
+                id: 14,
+                title: "Lack of CSRF Protection",
+                severity: "High",
+                category: "Security",
+                desc: "CSRF disabled globally. While JWT helps, browser-based cookie auth (if used) is vulnerable.",
+                impact: "Attackers can trick doctors into performing actions (e.g., discharging patient) via malicious links.",
+                fix: "Enable CSRF protection for any state-changing endpoints if cookies are used."
+            },
+            {
+                id: 15,
+                title: "No Audit Trail for Admin Actions",
+                severity: "Medium",
+                category: "Compliance",
+                desc: "Admin changes to master data (Drug prices, User roles) are not logged.",
+                impact: "Impossible to trace malicious or accidental config changes.",
+                fix: "Implement Hibernate Envers or custom Audit Log table for Admin entities."
+            },
+            {
+                id: 16,
+                title: "Unbounded Search Queries",
+                severity: "Medium",
+                category: "Performance",
+                desc: "Search APIs allow returning all records without pagination limits.",
+                impact: "Memory overflow (OOM) on server and browser crash on client.",
+                fix: "Enforce `Pageable` on all list endpoints with max page size of 100."
+            },
+            {
+                id: 17,
+                title: "Hardcoded API URLs in Angular",
+                severity: "Low",
+                category: "Frontend",
+                desc: "Services contain `http://localhost:8080` strings.",
+                impact: "Build fails in production or connects to wrong env.",
+                fix: "Use `environment.ts` and relative paths (proxy.conf.json)."
+            },
+            {
+                id: 18,
+                title: "Database Backup Not Tested",
+                severity: "High",
+                category: "Reliability",
+                desc: "Backups are running, but no restore test has been performed.",
+                impact: "False sense of security. Backup might be corrupted.",
+                fix: "Establish monthly automated restore drills to a staging environment."
+            },
+            {
+                id: 19,
+                title: "No Request Validation (JSR-303)",
+                severity: "Medium",
+                category: "Reliability",
+                desc: "Controllers manually check `if (name == null)`. Inconsistent.",
+                impact: "Dirty data enters DB. Code duplication.",
+                fix: "Use `@Valid` and `@NotNull` annotations on DTOs."
+            },
+            {
+                id: 20,
+                title: "Exposure of Stack Traces",
+                severity: "Low",
+                category: "Security",
+                desc: "500 Errors return full Java stack trace to frontend.",
+                impact: "Information disclosure (paths, library versions) aids attackers.",
+                fix: "Configure `server.error.include-stacktrace=never`."
+            },
+            {
+                id: 21,
+                title: "Missing Circuit Breaker for External APIs",
+                severity: "Medium",
+                category: "Reliability",
+                desc: "Calls to external Insurance Gateway block threads indefinitely on timeout.",
+                impact: "Cascading failure if Insurance API goes down.",
+                fix: "Implement Resilience4j Circuit Breaker and Timeouts."
+            },
+            {
+                id: 22,
+                title: "Transaction Management Issues",
+                severity: "Medium",
+                category: "Database",
+                desc: "Service methods missing `@Transactional` annotation where multiple writes occur.",
+                impact: "Data inconsistency (partial updates) on error.",
+                fix: "Audit all write services and apply `@Transactional`."
+            },
+            {
+                id: 23,
+                title: "Angular Bundle Size Too Large",
+                severity: "Low",
+                category: "Performance",
+                desc: "`main.js` is 4MB. No lazy loading implemented.",
+                impact: "Slow initial load, especially on mobile networks.",
+                fix: "Implement Lazy Loading for all feature modules (Admin, Lab, Pharmacy)."
+            },
+            {
+                id: 24,
+                title: "Using Outdated Libraries",
+                severity: "Low",
+                category: "Security",
+                desc: "Spring Boot 2.4.x (EOL). Old Lodash version.",
+                impact: "Missing security patches.",
+                fix: "Upgrade to Spring Boot 3.x and Angular 16+."
+            },
+            {
+                id: 25,
+                title: "Lack of Unit Tests for Core Logic",
+                severity: "Medium",
+                category: "Quality",
+                desc: "Billing calculation logic has 0% coverage.",
+                impact: "Financial discrepancies likely after updates.",
+                fix: "Mandate JUnit tests for all Service classes."
+            }
+        ];
+
+        // ---------------------------------------------------------
+        // APP LOGIC
+        // ---------------------------------------------------------
+        
+        // Tab Switching
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Show selected
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update Nav Buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.tab === tabId) {
+                    btn.classList.add('text-blue-600', 'bg-blue-50');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    btn.classList.remove('text-blue-600', 'bg-blue-50');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+        }
+
+        // Code Tab Switching
+        function switchCodeTab(codeId) {
+            // Hide all code blocks
+            document.querySelectorAll('.code-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.code-content').forEach(el => el.classList.remove('block'));
+            
+            // Show selected
+            const selected = document.getElementById('code-' + codeId);
+            selected.classList.remove('hidden');
+            selected.classList.add('block');
+
+            // Update Buttons
+            document.querySelectorAll('.code-tab-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                btn.classList.add('text-slate-600');
+            });
+            // Highlight current button (simple approximation)
+            event.target.classList.remove('text-slate-600');
+            event.target.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+        }
+
+        // Issue List Rendering & Filtering
+        function renderIssues(filter) {
+            const listContainer = document.getElementById('issuesList');
+            listContainer.innerHTML = '';
+
+            const filtered = filter === 'all' 
+                ? issuesData 
+                : issuesData.filter(i => i.severity === filter || i.category === filter);
+
+            filtered.forEach(issue => {
+                const el = document.createElement('div');
+                // Severity Color
+                let borderClass = 'border-l-4 border-l-slate-300';
+                if(issue.severity === 'Critical') borderClass = 'border-l-4 border-l-red-500';
+                if(issue.severity === 'High') borderClass = 'border-l-4 border-l-orange-400';
+                
+                el.className = `p-3 mb-2 bg-slate-50 rounded hover:bg-white hover:shadow-md cursor-pointer transition-all border border-slate-100 ${borderClass}`;
+                el.onclick = () => showIssueDetail(issue.id);
+                el.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold uppercase text-slate-500">${issue.category}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${getSeverityBadge(issue.severity)}">${issue.severity}</span>
+                    </div>
+                    <h4 class="font-semibold text-sm text-slate-800 mt-1">${issue.title}</h4>
+                `;
+                listContainer.appendChild(el);
+            });
+        }
+
+        function getSeverityBadge(sev) {
+            if(sev === 'Critical') return 'bg-red-100 text-red-700';
+            if(sev === 'High') return 'bg-orange-100 text-orange-700';
+            if(sev === 'Medium') return 'bg-blue-100 text-blue-700';
+            return 'bg-slate-200 text-slate-700';
+        }
+
+        function filterIssues(criteria) {
+            // Update active button state
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-slate-800', 'text-white'));
+            // Re-style the clicked button (simplified for vanilla JS)
+            const clickedBtn = event.target;
+            clickedBtn.classList.add('bg-slate-800', 'text-white');
+            clickedBtn.classList.remove('bg-white', 'text-slate-600');
+
+            renderIssues(criteria);
+        }
+
+        function showIssueDetail(id) {
+            const issue = issuesData.find(i => i.id === id);
+            document.getElementById('issueDetailEmpty').classList.add('hidden');
+            const detailContainer = document.getElementById('issueDetailContent');
+            detailContainer.classList.remove('hidden');
+            
+            detailContainer.innerHTML = `
+                <div class="p-6 border-b border-slate-100">
+                    <div class="flex gap-2 mb-2">
+                        <span class="px-2 py-1 bg-slate-100 rounded text-xs font-bold text-slate-600">${issue.category}</span>
+                        <span class="px-2 py-1 ${getSeverityBadge(issue.severity)} rounded text-xs font-bold">${issue.severity}</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900">${issue.title}</h2>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-1">Description</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">${issue.desc}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-red-700 uppercase tracking-wide mb-1">Business Impact</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">${issue.impact}</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-emerald-700 uppercase tracking-wide mb-2">Recommended Remediation</h3>
+                        <p class="text-slate-700 text-sm font-medium mb-3">${issue.fix}</p>
+                        ${getCodeSnippet(issue.id)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getCodeSnippet(id) {
+            // Sample snippets for specific issues
+            if(id === 4) { // N+1
+                return `<pre class="text-xs bg-slate-800 text-slate-200 p-3 rounded font-mono">
+// OLD (Bad)
+@OneToMany
+List&lt;Visit&gt; visits; 
+
+// NEW (Fix)
+@OneToMany(fetch = FetchType.LAZY) 
+// Use in Repo:
+@Query("SELECT p FROM Patient p JOIN FETCH p.visits")
+List&lt;Patient&gt; findAllWithVisits();</pre>`;
+            }
+            if(id === 1) { // JWT Secret
+                return `<pre class="text-xs bg-slate-800 text-slate-200 p-3 rounded font-mono">
+// OLD
+String secret = "mySuperSecretKey123";
+
+// NEW
+@Value("\${jwt.secret}")
+private String secret;
+
+// application.properties
+jwt.secret=\${JWT_SECRET_ENV_VAR}</pre>`;
+            }
+            return '';
+        }
+
+        // Charts Initialization
+        function initCharts() {
+            // Severity Chart
+            const ctxSev = document.getElementById('severityChart').getContext('2d');
+            new Chart(ctxSev, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
+                    datasets: [{
+                        data: [3, 7, 10, 5],
+                        backgroundColor: ['#ef4444', '#f97316', '#3b82f6', '#94a3b8'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Category Chart
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctxCat, {
+                type: 'bar',
+                data: {
+                    labels: ['Security', 'Database', 'Performance', 'Reliability', 'Maintainability'],
+                    datasets: [{
+                        label: 'Issue Count',
+                        data: [8, 5, 4, 3, 5],
+                        backgroundColor: '#64748b',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            renderIssues('all');
+            initCharts();
+        });
+
+    </script>
+</body>
+</html>

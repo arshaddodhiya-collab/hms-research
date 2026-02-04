@@ -1,0 +1,1148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HMIS Launch Strategy & Research Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+      }
+      .tab-active {
+        border-bottom: 2px solid #0ea5e9;
+        color: #0ea5e9;
+        font-weight: 600;
+      }
+      .tab-inactive {
+        color: #64748b;
+        hover: text-slate-900;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 300px;
+        max-height: 400px;
+      }
+      @media (min-width: 768px) {
+        .chart-container {
+          height: 350px;
+        }
+      }
+
+      /* Custom Scrollbar for inner content */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+
+    <!-- Chosen Palette: Slate (Backgrounds), Sky/Teal (Accents for Medical feel), Red/Amber (Alerts) -->
+    <!-- Application Structure Plan: 
+         The app is structured as a strategic dashboard with 5 main views (Tabs):
+         1. Executive Summary: High-level strategy, market fit, and key KPIs.
+         2. Innovation Catalog: An interactive grid of proposed features with 'T-shirt size' vs. 'Value' analysis.
+         3. Implementation Roadmap: A timeline view of the 3-month sprint plan.
+         4. Technical Audit: Deep dive into Architecture, Security, and Code health.
+         5. Compliance & Infra: Regulatory checklists and cost modeling.
+         
+         Navigation is persistent at the top. The layout uses a 12-column grid system for responsive design.
+         Interactions include filtering feature lists, toggling tech debt details, and dynamic chart updates based on category selection.
+    -->
+    <!-- Visualization & Content Choices:
+         - Market Opportunity: Pie Chart (Inform) -> Simple breakdown of target segments.
+         - Feature Value Matrix: Scatter Plot (Compare/Relationship) -> Visualizes Effort vs. Impact to help prioritization.
+         - Tech Health: Radar Chart (Analyze) -> Shows gaps in Security, Scalability, Observability vs Targets.
+         - Roadmap: HTML/CSS Grid (Timeline) -> Clear visualization of the 3-month plan (Gantt style).
+         - Innovation Cards: Filterable Grid (Organize) -> Easy scanning of 12+ ideas.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+  </head>
+  <body class="bg-slate-50 flex flex-col min-h-screen">
+    <!-- Header / Nav -->
+    <header
+      class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center gap-3">
+            <div
+              class="h-8 w-8 bg-sky-600 rounded-md flex items-center justify-center text-white font-bold text-xl"
+            >
+              M
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-slate-900 tracking-tight">
+                MediCore HMIS
+                <span class="text-slate-400 font-normal"
+                  >| Research Package</span
+                >
+              </h1>
+              <p class="text-xs text-slate-500">
+                Target Launch: Q3 2026 • Scope: India & MENA
+              </p>
+            </div>
+          </div>
+          <nav class="hidden md:flex space-x-8 items-center" id="desktop-nav">
+            <!-- Nav items injected by JS -->
+          </nav>
+        </div>
+      </div>
+      <!-- Mobile Nav Placeholder -->
+      <div
+        class="md:hidden flex justify-around py-2 border-t bg-slate-50 text-xs"
+        id="mobile-nav"
+      ></div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <!-- View 1: Executive Summary -->
+      <section id="view-summary" class="space-y-6 animate-fade-in">
+        <div
+          class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8"
+        >
+          <div class="md:flex justify-between items-start mb-6">
+            <div class="max-w-2xl">
+              <h2 class="text-2xl font-bold text-slate-800 mb-2">
+                Executive Strategy Brief
+              </h2>
+              <p class="text-slate-600 leading-relaxed">
+                The current HMIS landscape in India and MENA is fragmented,
+                often relying on legacy on-premise systems with poor
+                interoperability.
+                <strong>MediCore's strategy</strong> leverages the existing
+                Angular/Spring Boot foundation to deliver a "Hybrid-Cloud"
+                solution: local reliability for critical hospital ops, with
+                cloud connectivity for analytics and patient engagement.
+              </p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-2">
+              <span
+                class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium"
+                >Ready to Scale</span
+              >
+              <span
+                class="px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-sm font-medium"
+                >Mid-Market Focus</span
+              >
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- KPI Cards -->
+            <div class="bg-slate-50 p-5 rounded-lg border border-slate-100">
+              <h3
+                class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2"
+              >
+                Primary Pain Point
+              </h3>
+              <p class="text-lg font-bold text-slate-800">
+                Revenue Leakage & Inventory Waste
+              </p>
+              <p class="text-sm text-slate-500 mt-2">
+                12-15% of revenue is lost due to unbilled services and expired
+                drugs in target markets.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-lg border border-slate-100">
+              <h3
+                class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2"
+              >
+                Technical Advantage
+              </h3>
+              <p class="text-lg font-bold text-slate-800">
+                Offline-First Architecture
+              </p>
+              <p class="text-sm text-slate-500 mt-2">
+                Critical for reliable operations in regions with intermittent
+                internet connectivity.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-lg border border-slate-100">
+              <h3
+                class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2"
+              >
+                Go-to-Market
+              </h3>
+              <p class="text-lg font-bold text-slate-800">
+                "Land & Expand" Model
+              </p>
+              <p class="text-sm text-slate-500 mt-2">
+                Start with OPD/Billing (2 weeks setup), upsell
+                IPD/Inventory/Analytics modules.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <h3 class="text-lg font-semibold mb-4">
+                Target Market Segmentation
+              </h3>
+              <div class="chart-container">
+                <canvas id="marketChart"></canvas>
+              </div>
+              <p class="text-center text-xs text-slate-400 mt-2">
+                Based on bed-count and digitization maturity in Tier 2/3 cities.
+              </p>
+            </div>
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold">
+                Top 3 Strategic Recommendations
+              </h3>
+              <div class="flex gap-4 items-start">
+                <div
+                  class="bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded mt-1"
+                >
+                  1
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800">
+                    Prioritize Integration Hub
+                  </h4>
+                  <p class="text-sm text-slate-600">
+                    Don't build everything. Build solid connectors for Lab
+                    Devices (HL7) and Tally/Oracle (Accounting). This is a major
+                    differentiator against closed legacy systems.
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-4 items-start">
+                <div
+                  class="bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded mt-1"
+                >
+                  2
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800">
+                    Invest in "Smart Defaults"
+                  </h4>
+                  <p class="text-sm text-slate-600">
+                    Reduce clicking fatigue. Use historical data to pre-fill
+                    prescription dosages and order sets. Speed is the #1 request
+                    from doctors.
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-4 items-start">
+                <div
+                  class="bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded mt-1"
+                >
+                  3
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800">Modular Pricing</h4>
+                  <p class="text-sm text-slate-600">
+                    Shift from massive license fees to SaaS-style monthly
+                    subscriptions per bed. Lowers barrier to entry for mid-sized
+                    clinics.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 2: Innovation Catalog -->
+      <section id="view-innovation" class="hidden space-y-6 animate-fade-in">
+        <div
+          class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200"
+        >
+          <div class="mb-4 md:mb-0">
+            <h2 class="text-2xl font-bold text-slate-800">
+              Innovation Feature Catalog
+            </h2>
+            <p class="text-sm text-slate-500">
+              12 differentiated features prioritized by Impact vs. Effort.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              onclick="filterFeatures('all')"
+              class="filter-btn px-4 py-2 text-sm rounded-lg bg-slate-100 hover:bg-slate-200 active-filter"
+              data-category="all"
+            >
+              All
+            </button>
+            <button
+              onclick="filterFeatures('Clinical')"
+              class="filter-btn px-4 py-2 text-sm rounded-lg bg-slate-100 hover:bg-slate-200"
+              data-category="Clinical"
+            >
+              Clinical
+            </button>
+            <button
+              onclick="filterFeatures('Operational')"
+              class="filter-btn px-4 py-2 text-sm rounded-lg bg-slate-100 hover:bg-slate-200"
+              data-category="Operational"
+            >
+              Ops
+            </button>
+            <button
+              onclick="filterFeatures('Patient')"
+              class="filter-btn px-4 py-2 text-sm rounded-lg bg-slate-100 hover:bg-slate-200"
+              data-category="Patient"
+            >
+              Patient
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Scatter Plot -->
+          <div
+            class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200"
+          >
+            <h3 class="text-lg font-bold mb-4 text-slate-700">
+              Prioritization Matrix (Impact vs. Complexity)
+            </h3>
+            <div class="chart-container h-80">
+              <canvas id="featureScatterChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Feature Stats -->
+          <div class="space-y-4">
+            <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+              <h4 class="font-bold text-indigo-900 mb-2">
+                Winning Feature Idea
+              </h4>
+              <div class="text-3xl font-bold text-indigo-700 mb-1">
+                WhatsApp Bot
+              </div>
+              <p class="text-sm text-indigo-800">
+                For lab results & appointments.
+              </p>
+              <div class="mt-4 text-xs bg-white bg-opacity-50 p-2 rounded">
+                <span class="font-semibold">Why?</span> Highest reach in
+                India/MENA. Low technical complexity (Twilio API). High patient
+                satisfaction.
+              </div>
+            </div>
+            <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+              <h4 class="font-bold text-emerald-900 mb-2">Revenue Driver</h4>
+              <div class="text-3xl font-bold text-emerald-700 mb-1">
+                Dynamic Pricing
+              </div>
+              <p class="text-sm text-emerald-800">
+                Rules engine for insurance limits.
+              </p>
+              <div class="mt-4 text-xs bg-white bg-opacity-50 p-2 rounded">
+                <span class="font-semibold">Value:</span> Prevents claim
+                rejections by auto-checking procedure costs against insurance
+                caps pre-billing.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Grid of Cards -->
+        <div
+          id="feature-grid"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          <!-- JS will populate this -->
+        </div>
+      </section>
+
+      <!-- View 3: Technical Audit -->
+      <section id="view-tech" class="hidden space-y-6 animate-fade-in">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-2xl font-bold text-slate-800 mb-2">
+            Technical Audit & Architecture
+          </h2>
+          <p class="text-slate-600 mb-6">
+            Current Stack: Angular 12 (Frontend), Spring Boot 2.4 (Backend),
+            MySQL 5.7 (DB). Critical upgrades required for security and scale.
+          </p>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Tech Health Radar -->
+            <div>
+              <h3 class="font-semibold text-slate-700 mb-4">
+                System Health Assessment
+              </h3>
+              <div class="chart-container">
+                <canvas id="techRadarChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Critical Debt List -->
+            <div class="space-y-4">
+              <h3 class="font-semibold text-slate-700 mb-4">
+                Critical Technical Debt & Remediation
+              </h3>
+              <div class="space-y-3" id="tech-debt-list">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architecture Diagram Visualization (CSS) -->
+        <div
+          class="bg-slate-900 text-white p-6 rounded-xl shadow-lg overflow-hidden"
+        >
+          <h3 class="text-lg font-semibold mb-6">
+            Target Architecture (Hybrid Deployment)
+          </h3>
+          <div
+            class="flex flex-col md:flex-row justify-between items-stretch gap-4 text-sm text-center"
+          >
+            <div
+              class="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col justify-center relative group"
+            >
+              <div class="mb-2 font-mono text-emerald-400">Client Layer</div>
+              <div class="bg-slate-700 p-2 rounded mb-2">Angular 16 SPA</div>
+              <div class="bg-slate-700 p-2 rounded">PWA / Mobile</div>
+              <div
+                class="absolute -right-2 top-1/2 w-4 h-0.5 bg-slate-600 hidden md:block"
+              ></div>
+            </div>
+
+            <div
+              class="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-4 relative"
+            >
+              <div class="mb-2 font-mono text-sky-400">
+                API Gateway (Spring Cloud)
+              </div>
+              <div class="space-y-2">
+                <div class="bg-slate-700 p-2 rounded border-l-4 border-sky-500">
+                  Auth Service (JWT)
+                </div>
+                <div class="bg-slate-700 p-2 rounded border-l-4 border-sky-500">
+                  Core EMR Service
+                </div>
+                <div class="bg-slate-700 p-2 rounded border-l-4 border-sky-500">
+                  Billing Service
+                </div>
+              </div>
+              <div
+                class="absolute -right-2 top-1/2 w-4 h-0.5 bg-slate-600 hidden md:block"
+              ></div>
+            </div>
+
+            <div
+              class="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-4 relative"
+            >
+              <div class="mb-2 font-mono text-amber-400">Data Layer</div>
+              <div
+                class="bg-slate-700 p-2 rounded mb-2 flex justify-between items-center"
+              >
+                <span>Primary DB (MySQL 8)</span>
+                <span class="text-xs bg-slate-900 px-1 rounded"
+                  >Transactional</span
+                >
+              </div>
+              <div
+                class="bg-slate-700 p-2 rounded flex justify-between items-center"
+              >
+                <span>Redis Cache</span>
+                <span class="text-xs bg-slate-900 px-1 rounded"
+                  >Session/Config</span
+                >
+              </div>
+            </div>
+          </div>
+          <p class="mt-4 text-xs text-slate-400 text-center">
+            *Sensitive Patient Data stays encrypted at rest. Aggregate analytics
+            pushed to Cloud Data Lake.
+          </p>
+        </div>
+      </section>
+
+      <!-- View 4: Roadmap -->
+      <section id="view-roadmap" class="hidden space-y-6 animate-fade-in">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-800">
+                Implementation Plan
+              </h2>
+              <p class="text-slate-600 text-sm">
+                3-Month Launch Runway (6 Sprints)
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-sky-600">88 Days</div>
+              <div class="text-xs text-slate-500">To Go-Live</div>
+            </div>
+          </div>
+
+          <!-- Gantt Chart Container -->
+          <div class="overflow-x-auto">
+            <div class="min-w-[800px]">
+              <!-- Header -->
+              <div
+                class="grid grid-cols-12 gap-1 mb-2 text-xs font-semibold text-slate-500 uppercase"
+              >
+                <div class="col-span-2">Phase</div>
+                <div class="col-span-3">Month 1 (Foundation)</div>
+                <div class="col-span-3">Month 2 (Feature Dev)</div>
+                <div class="col-span-3">Month 3 (Hardening)</div>
+                <div class="col-span-1">Owner</div>
+              </div>
+
+              <!-- Rows -->
+              <div class="space-y-3" id="roadmap-container">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 5: Compliance & Cost -->
+      <section id="view-compliance" class="hidden space-y-6 animate-fade-in">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Compliance Checklist -->
+          <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"
+          >
+            <h3
+              class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"
+            >
+              <span class="text-2xl">🛡️</span> Security & Compliance
+            </h3>
+            <div class="space-y-4" id="compliance-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Infrastructure Cost Est -->
+          <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"
+          >
+            <h3
+              class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"
+            >
+              <span class="text-2xl">🏗️</span> Infrastructure Cost Estimator
+            </h3>
+            <p class="text-sm text-slate-500 mb-6">
+              Estimated monthly burn for a standard 100-bed hospital deployment
+              (Hybrid Model).
+            </p>
+
+            <div class="space-y-3 border-b border-slate-100 pb-4 mb-4">
+              <div class="flex justify-between text-sm">
+                <span>App Servers (2x AWS t3.medium)</span>
+                <span class="font-mono">$84.00</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Managed RDS (MySQL Multi-AZ)</span>
+                <span class="font-mono">$145.00</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>S3 Storage (Backups/Docs)</span>
+                <span class="font-mono">$25.00</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Load Balancer & WAF</span>
+                <span class="font-mono">$45.00</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Local Server Hardware (Amortized)</span>
+                <span class="font-mono">$120.00</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center pt-2">
+              <span class="font-bold text-slate-700">Total Monthly Cost</span>
+              <span class="text-2xl font-bold text-slate-900">$419.00</span>
+            </div>
+            <div class="mt-4 bg-sky-50 text-sky-800 text-xs p-3 rounded">
+              <strong>Recommendation:</strong> Use Reserved Instances for RDS
+              and Compute to reduce cloud costs by ~30% after Month 3.
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-800 mb-4">
+            Database Schema Changes (ERD Highlights)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div class="border border-slate-200 rounded p-3">
+              <div class="font-bold text-slate-700 border-b pb-2 mb-2">
+                Patients Table
+              </div>
+              <ul class="list-disc pl-4 text-slate-500 space-y-1">
+                <li>id (PK)</li>
+                <li>national_id (Indexed)</li>
+                <li>insurance_provider_id</li>
+                <li class="text-green-600 font-semibold">
+                  + consent_token (New)
+                </li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 rounded p-3">
+              <div class="font-bold text-slate-700 border-b pb-2 mb-2">
+                Encounters Table
+              </div>
+              <ul class="list-disc pl-4 text-slate-500 space-y-1">
+                <li>id (PK)</li>
+                <li>patient_id (FK)</li>
+                <li>doctor_id (FK)</li>
+                <li class="text-green-600 font-semibold">
+                  + voice_notes_url (New)
+                </li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 rounded p-3">
+              <div class="font-bold text-slate-700 border-b pb-2 mb-2">
+                Inventory_Logs
+              </div>
+              <ul class="list-disc pl-4 text-slate-500 space-y-1">
+                <li>id (PK)</li>
+                <li>batch_number</li>
+                <li>expiry_date</li>
+                <li class="text-green-600 font-semibold">
+                  + prediction_score (New)
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-6">
+      <div class="max-w-7xl mx-auto px-6 text-center text-slate-400 text-sm">
+        <p>
+          &copy; 2026 MediCore Systems Research Group. Confidential Internal
+          Document.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // --- DATA STORE ---
+      const appData = {
+        navItems: [
+          { id: "view-summary", label: "Strategy" },
+          { id: "view-innovation", label: "Innovation" },
+          { id: "view-tech", label: "Tech Audit" },
+          { id: "view-roadmap", label: "Roadmap" },
+          { id: "view-compliance", label: "Compliance" },
+        ],
+        features: [
+          {
+            title: "AI Scribe (Voice-to-Text)",
+            category: "Clinical",
+            effort: 85,
+            impact: 95,
+            desc: "Auto-transcribe consultation notes to EMR fields.",
+            type: "High Value",
+          },
+          {
+            title: "WhatsApp Patient Bot",
+            category: "Patient",
+            effort: 40,
+            impact: 90,
+            desc: "Automated appointment booking & lab result PDF delivery.",
+            type: "Quick Win",
+          },
+          {
+            title: "Smart Inventory",
+            category: "Operational",
+            effort: 60,
+            impact: 75,
+            desc: "Expiry alerts and predictive re-ordering.",
+            type: "Core",
+          },
+          {
+            title: "Dynamic Pricing Engine",
+            category: "Operational",
+            effort: 70,
+            impact: 85,
+            desc: "Adjust pricing based on insurance caps & room demand.",
+            type: "Revenue",
+          },
+          {
+            title: "Tele-Consult Module",
+            category: "Clinical",
+            effort: 65,
+            impact: 70,
+            desc: "Integrated video calls within the doctor portal.",
+            type: "Growth",
+          },
+          {
+            title: "Insurance Auto-Claim",
+            category: "Operational",
+            effort: 90,
+            impact: 95,
+            desc: "Automated pre-auth and claim submission formats.",
+            type: "Revenue",
+          },
+          {
+            title: "Doctor Mobile App",
+            category: "Clinical",
+            effort: 80,
+            impact: 60,
+            desc: "View rounds and patient vitals on the go.",
+            type: "Convenience",
+          },
+          {
+            title: "Queue Management Display",
+            category: "Patient",
+            effort: 30,
+            impact: 50,
+            desc: "TV display support for OPD waiting areas.",
+            type: "Quick Win",
+          },
+          {
+            title: "Lab Device Interface (LIMS)",
+            category: "Clinical",
+            effort: 75,
+            impact: 85,
+            desc: "Direct HL7 integration with analyzers.",
+            type: "Core",
+          },
+          {
+            title: "Multi-Branch Analytics",
+            category: "Operational",
+            effort: 50,
+            impact: 80,
+            desc: "Central dashboard for hospital chains.",
+            type: "Growth",
+          },
+          {
+            title: "Digital Consent Forms",
+            category: "Patient",
+            effort: 20,
+            impact: 40,
+            desc: "Tablet-based signature capture.",
+            type: "Quick Win",
+          },
+          {
+            title: "Audit Log Viewer",
+            category: "Operational",
+            effort: 45,
+            impact: 60,
+            desc: "Security requirement for admins.",
+            type: "Compliance",
+          },
+        ],
+        techDebt: [
+          {
+            item: "Upgrade Angular 12 to 16+",
+            severity: "High",
+            desc: "Critical for security patches and build speed performance.",
+          },
+          {
+            item: "N+1 Query Issue in Billing",
+            severity: "High",
+            desc: "Causes timeouts during month-end reporting. Needs FetchType.LAZY fix.",
+          },
+          {
+            item: "Hardcoded Credentials",
+            severity: "Critical",
+            desc: "Found in 3 legacy services. Move to Vault/Environment variables immediately.",
+          },
+          {
+            item: "Lack of API Documentation",
+            severity: "Medium",
+            desc: "Slowing down mobile app team. Implement Swagger/OpenAPI.",
+          },
+        ],
+        roadmap: [
+          {
+            phase: "Phase 1: Foundation",
+            m1: "bg-blue-500 rounded-l",
+            m2: "bg-blue-200",
+            m3: "",
+            task: "Core Upgrade & Security",
+            owner: "Backend Lead",
+          },
+          {
+            phase: "Phase 2: Features",
+            m1: "bg-sky-200",
+            m2: "bg-sky-500",
+            m3: "bg-sky-200",
+            task: "WhatsApp & Inventory Module",
+            owner: "Fullstack Team",
+          },
+          {
+            phase: "Phase 3: Integration",
+            m1: "",
+            m2: "bg-indigo-200",
+            m3: "bg-indigo-500 rounded-r",
+            task: "Insurance & LIMS Connectors",
+            owner: "Integration Sp.",
+          },
+          {
+            phase: "QA & UAT",
+            m1: "",
+            m2: "",
+            m3: "bg-amber-400 opacity-80 rounded",
+            task: "End-to-End Testing & Pilot",
+            owner: "QA Lead",
+          },
+        ],
+        compliance: [
+          {
+            item: "Data Encryption at Rest (AES-256)",
+            status: "In Progress",
+            width: "60%",
+            color: "bg-amber-500",
+          },
+          {
+            item: "Role-Based Access Control (RBAC)",
+            status: "Complete",
+            width: "100%",
+            color: "bg-emerald-500",
+          },
+          {
+            item: "Audit Trails (Read/Write)",
+            status: "Pending",
+            width: "20%",
+            color: "bg-red-500",
+          },
+          {
+            item: "Patient Consent Management",
+            status: "In Progress",
+            width: "40%",
+            color: "bg-amber-500",
+          },
+          {
+            item: "Backup & Disaster Recovery Drill",
+            status: "Pending",
+            width: "0%",
+            color: "bg-red-500",
+          },
+        ],
+      };
+
+      // --- DOM ELEMENTS ---
+      const desktopNav = document.getElementById("desktop-nav");
+      const mobileNav = document.getElementById("mobile-nav");
+      const featureGrid = document.getElementById("feature-grid");
+      const techDebtList = document.getElementById("tech-debt-list");
+      const roadmapContainer = document.getElementById("roadmap-container");
+      const complianceList = document.getElementById("compliance-list");
+
+      // --- INITIALIZATION ---
+      function init() {
+        renderNav();
+        renderFeatures("all");
+        renderTechDebt();
+        renderRoadmap();
+        renderCompliance();
+        initCharts();
+        switchView("view-summary"); // Default view
+      }
+
+      // --- NAVIGATION ---
+      function renderNav() {
+        appData.navItems.forEach((item) => {
+          // Desktop
+          const btn = document.createElement("button");
+          btn.className = `text-sm font-medium transition-colors duration-200 tab-inactive nav-btn`;
+          btn.innerText = item.label;
+          btn.onclick = () => switchView(item.id);
+          btn.dataset.target = item.id;
+          desktopNav.appendChild(btn);
+
+          // Mobile
+          const mBtn = document.createElement("button");
+          mBtn.className = `p-2 text-slate-600`;
+          mBtn.innerText = item.label;
+          mBtn.onclick = () => switchView(item.id);
+          mobileNav.appendChild(mBtn);
+        });
+      }
+
+      function switchView(viewId) {
+        // Hide all sections
+        document
+          .querySelectorAll("main > section")
+          .forEach((sec) => sec.classList.add("hidden"));
+        // Show target
+        document.getElementById(viewId).classList.remove("hidden");
+
+        // Update active state
+        document.querySelectorAll(".nav-btn").forEach((btn) => {
+          if (btn.dataset.target === viewId) {
+            btn.classList.add("tab-active");
+            btn.classList.remove("tab-inactive");
+          } else {
+            btn.classList.remove("tab-active");
+            btn.classList.add("tab-inactive");
+          }
+        });
+      }
+
+      // --- RENDER FUNCTIONS ---
+      function renderFeatures(filter) {
+        featureGrid.innerHTML = "";
+        const filtered =
+          filter === "all"
+            ? appData.features
+            : appData.features.filter((f) => f.category === filter);
+
+        // Update buttons
+        document.querySelectorAll(".filter-btn").forEach((btn) => {
+          if (btn.dataset.category === filter) {
+            btn.classList.add("bg-slate-800", "text-white");
+            btn.classList.remove("bg-slate-100", "text-slate-900");
+          } else {
+            btn.classList.remove("bg-slate-800", "text-white");
+            btn.classList.add("bg-slate-100", "text-slate-900");
+          }
+        });
+
+        filtered.forEach((f) => {
+          const div = document.createElement("div");
+          div.className =
+            "bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow group";
+          div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-600">${f.category}</span>
+                        <span class="text-xs font-semibold text-slate-400">${f.type}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-lg mb-1 group-hover:text-sky-600 transition-colors">${f.title}</h4>
+                    <p class="text-sm text-slate-500 mb-4 h-10">${f.desc}</p>
+                    <div class="flex items-center gap-4 text-xs text-slate-500 border-t pt-3">
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-slate-700">Effort</span>
+                            <div class="w-16 h-1 bg-slate-200 rounded mt-1"><div class="h-full bg-slate-400 rounded" style="width: ${f.effort}%"></div></div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-slate-700">Impact</span>
+                            <div class="w-16 h-1 bg-slate-200 rounded mt-1"><div class="h-full bg-sky-500 rounded" style="width: ${f.impact}%"></div></div>
+                        </div>
+                    </div>
+                `;
+          featureGrid.appendChild(div);
+        });
+      }
+
+      function filterFeatures(cat) {
+        renderFeatures(cat);
+        // Optionally update charts here if desired
+      }
+
+      function renderTechDebt() {
+        techDebtList.innerHTML = "";
+        appData.techDebt.forEach((item) => {
+          const color =
+            item.severity === "Critical"
+              ? "text-red-600 bg-red-50 border-red-100"
+              : "text-amber-600 bg-amber-50 border-amber-100";
+          const div = document.createElement("div");
+          div.className = `p-4 rounded-lg border flex justify-between items-start ${color}`;
+          div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-sm flex items-center gap-2">
+                            ${item.severity === "Critical" ? "⚠️" : "🔧"} ${item.item}
+                        </div>
+                        <p class="text-xs mt-1 opacity-80">${item.desc}</p>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wide px-2 py-1 bg-white bg-opacity-60 rounded">${item.severity}</span>
+                `;
+          techDebtList.appendChild(div);
+        });
+      }
+
+      function renderRoadmap() {
+        roadmapContainer.innerHTML = "";
+        appData.roadmap.forEach((row) => {
+          const div = document.createElement("div");
+          div.className =
+            "grid grid-cols-12 gap-1 items-center bg-slate-50 p-2 rounded hover:bg-slate-100";
+          div.innerHTML = `
+                    <div class="col-span-2 text-xs font-bold text-slate-700">${row.phase}</div>
+                    <div class="col-span-3 h-6 ${row.m1}"></div>
+                    <div class="col-span-3 h-6 ${row.m2}"></div>
+                    <div class="col-span-3 h-6 ${row.m3}"></div>
+                    <div class="col-span-1 text-xs text-slate-500 text-right">${row.owner}</div>
+                    <div class="col-span-12 text-xs text-slate-400 mt-1 pl-2 border-l-2 border-slate-300 ml-2">Focus: ${row.task}</div>
+                `;
+          roadmapContainer.appendChild(div);
+        });
+      }
+
+      function renderCompliance() {
+        complianceList.innerHTML = "";
+        appData.compliance.forEach((c) => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-medium text-slate-700">${c.item}</span>
+                        <span class="text-xs text-slate-500">${c.status}</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                        <div class="${c.color} h-2 rounded-full" style="width: ${c.width}"></div>
+                    </div>
+                `;
+          complianceList.appendChild(div);
+        });
+      }
+
+      // --- CHARTS ---
+      function initCharts() {
+        // 1. Market Pie Chart
+        new Chart(document.getElementById("marketChart"), {
+          type: "doughnut",
+          data: {
+            labels: [
+              "Mid-size Hospitals (50-200 beds)",
+              "Poly-clinics",
+              "Diagnostic Labs",
+              "Large Chains",
+            ],
+            datasets: [
+              {
+                data: [45, 30, 15, 10],
+                backgroundColor: ["#0ea5e9", "#38bdf8", "#7dd3fc", "#e2e8f0"],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "right",
+                labels: { boxWidth: 12, font: { size: 11 } },
+              },
+            },
+          },
+        });
+
+        // 2. Feature Scatter Plot
+        const scatterData = appData.features.map((f) => ({
+          x: f.effort,
+          y: f.impact,
+          label: f.title,
+          category: f.category,
+        }));
+        new Chart(document.getElementById("featureScatterChart"), {
+          type: "scatter",
+          data: {
+            datasets: [
+              {
+                label: "Features",
+                data: scatterData,
+                backgroundColor: function (ctx) {
+                  const cat = ctx.raw?.category;
+                  return cat === "Clinical"
+                    ? "#0ea5e9"
+                    : cat === "Operational"
+                      ? "#10b981"
+                      : "#f59e0b";
+                },
+                pointRadius: 6,
+                pointHoverRadius: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                title: { display: true, text: "Complexity / Effort" },
+                min: 0,
+                max: 100,
+              },
+              y: {
+                title: { display: true, text: "Business Impact" },
+                min: 0,
+                max: 100,
+              },
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return (
+                      context.raw.label +
+                      ` (Eff: ${context.raw.x}, Imp: ${context.raw.y})`
+                    );
+                  },
+                },
+              },
+              legend: { display: false }, // Custom legend managed by filter buttons
+            },
+          },
+        });
+
+        // 3. Tech Radar Chart
+        new Chart(document.getElementById("techRadarChart"), {
+          type: "radar",
+          data: {
+            labels: [
+              "Security",
+              "Scalability",
+              "Maintainability",
+              "Documentation",
+              "Reliability",
+              "Performance",
+            ],
+            datasets: [
+              {
+                label: "Current State",
+                data: [60, 40, 50, 30, 80, 55], // Low scores indicate debt
+                fill: true,
+                backgroundColor: "rgba(239, 68, 68, 0.2)",
+                borderColor: "rgb(239, 68, 68)",
+                pointBackgroundColor: "rgb(239, 68, 68)",
+              },
+              {
+                label: "Target (Launch)",
+                data: [90, 80, 85, 90, 95, 90],
+                fill: true,
+                backgroundColor: "rgba(14, 165, 233, 0.2)",
+                borderColor: "rgb(14, 165, 233)",
+                pointBackgroundColor: "rgb(14, 165, 233)",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            elements: { line: { borderWidth: 2 } },
+            scales: {
+              r: {
+                angleLines: { display: false },
+                suggestedMin: 0,
+                suggestedMax: 100,
+              },
+            },
+          },
+        });
+      }
+
+      // Start App
+      init();
+    </script>
+  </body>
+</html>

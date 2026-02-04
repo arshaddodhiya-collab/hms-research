@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      HMIS Strategic Launch Report: Innovations & Market Differentiation
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+      /* Custom scrollbar for cleaner look */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px; /* Max width for readability */
+        margin: 0 auto;
+        height: 400px;
+        max-height: 500px;
+      }
+
+      @media (max-width: 768px) {
+        .chart-container {
+          height: 300px;
+        }
+      }
+
+      .active-tab {
+        border-bottom: 3px solid #0ea5e9;
+        color: #0ea5e9;
+        font-weight: 600;
+      }
+
+      .section-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+    <!-- Chosen Palette: "Medical Modern" - Slate (neutrals), Sky Blue (primary), Teal (success/growth), Rose (alert) -->
+    <!-- Application Structure Plan: 
+         1. Header: Report Title & Context.
+         2. Navigation: Tab-based system (Executive Summary, Innovation Matrix, Quick Wins, Risk Analysis) to allow non-linear exploration.
+         3. Executive Summary: High-level dashboard with 3 key pillars (Market, Users, Value) and summary text.
+         4. Innovation Matrix (The Core): A 2-pane view. Left/Top is a Scatter Chart (Impact vs Effort) for strategic decision making. Right/Bottom is a detailed card grid. Interaction: Clicking a chart bubble highlights the specific card.
+         5. Quick Wins: A checklist-style visualizer focusing on speed (2-week sprint logic).
+         6. Risk Analysis: A Radar Chart to visualize the multi-dimensional nature of risk, paired with textual mitigation strategies.
+         Why this structure? It moves from high-level strategy (Exec Summary) to the "Meat" (Innovations), then to tactical execution (Quick Wins), and finally safeguards (Risks), mirroring a standard product management thought process.
+    -->
+    <!-- Visualization & Content Choices:
+         - Exec Summary -> Goal: Context -> Method: Text Cards -> Interaction: Hover effects.
+         - Innovations -> Goal: Prioritization -> Method: Chart.js Scatter Plot (Impact Y, Effort X) -> Interaction: Point click filters details. Allows rapid identification of "Low Hanging Fruit" vs "Strategic Bets".
+         - Innovation Details -> Goal: Explanation -> Method: Grid of Cards -> Interaction: Expandable details.
+         - Quick Wins -> Goal: Tactical Planning -> Method: Styled List/Timeline -> Interaction: Checkboxes (simulated) to feel actionable.
+         - Risk Analysis -> Goal: Safety Check -> Method: Chart.js Radar Chart -> Interaction: Visual comparison of risk categories.
+         - Confirmation: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+  </head>
+  <body
+    class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-sky-200"
+  >
+    <!-- Top Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center">
+            <div
+              class="h-8 w-8 bg-sky-500 rounded flex items-center justify-center text-white font-bold text-xl mr-3"
+            >
+              H
+            </div>
+            <span class="font-bold text-xl text-slate-900"
+              >HMIS Launch Strategy</span
+            >
+          </div>
+          <!-- Desktop Nav -->
+          <nav class="hidden md:flex space-x-8">
+            <button
+              onclick="app.switchTab('summary')"
+              id="nav-summary"
+              class="active-tab text-slate-500 hover:text-slate-700 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Executive Summary
+            </button>
+            <button
+              onclick="app.switchTab('innovations')"
+              id="nav-innovations"
+              class="text-slate-500 hover:text-slate-700 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Top 8 Innovations
+            </button>
+            <button
+              onclick="app.switchTab('quickwins')"
+              id="nav-quickwins"
+              class="text-slate-500 hover:text-slate-700 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              6 Quick Wins
+            </button>
+            <button
+              onclick="app.switchTab('risks')"
+              id="nav-risks"
+              class="text-slate-500 hover:text-slate-700 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Risk & Mitigation
+            </button>
+          </nav>
+          <!-- Mobile Menu Button (simplified for this demo) -->
+          <button
+            class="md:hidden text-slate-500"
+            onclick="
+              alert(
+                'Please use a desktop view for the best strategic dashboard experience.',
+              )
+            "
+          >
+            Menu
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- SECTION: EXECUTIVE SUMMARY -->
+      <section id="view-summary" class="section-fade-in space-y-8">
+        <div class="text-center max-w-3xl mx-auto">
+          <h1 class="text-3xl font-bold text-slate-900 mb-4">
+            Strategic Product Differentiation Report
+          </h1>
+          <p class="text-lg text-slate-600">
+            A concise analysis for the upcoming HMIS launch. The goal is to move
+            beyond "Data Entry" to "Intelligent Assistance," targeting the
+            specific gap between basic legacy systems and overly complex
+            enterprise suites.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Market Fit -->
+          <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover transition-all"
+          >
+            <div
+              class="h-12 w-12 bg-sky-100 rounded-full flex items-center justify-center mb-4 text-sky-600 text-2xl"
+            >
+              ⚡
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Market Fit</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              <strong>The "Mid-Market Gap":</strong> 50-300 bed hospitals need
+              modernization but cannot afford the complexity or training
+              overhead of Epic/Cerner. <br /><br />
+              Your Angular/Boot stack offers the speed of a modern web app with
+              the stability of Java, perfectly positioned for this segment.
+            </p>
+          </div>
+
+          <!-- Target Users -->
+          <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover transition-all"
+          >
+            <div
+              class="h-12 w-12 bg-teal-100 rounded-full flex items-center justify-center mb-4 text-teal-600 text-2xl"
+            >
+              👥
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Target Users</h3>
+            <ul class="text-slate-600 text-sm space-y-2">
+              <li class="flex items-start">
+                <span class="mr-2 text-teal-500">✓</span>
+                <strong>Administrators:</strong> Seeking revenue leakage
+                visibility and inventory control.
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-teal-500">✓</span>
+                <strong>Doctors:</strong> Demand "Zero-Click" access to patient
+                history.
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-teal-500">✓</span>
+                <strong>Nurses:</strong> Need mobile-friendly tools for bedside
+                data capture.
+              </li>
+            </ul>
+          </div>
+
+          <!-- Unique Value Prop -->
+          <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover transition-all"
+          >
+            <div
+              class="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4 text-indigo-600 text-2xl"
+            >
+              💎
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">
+              Unique Value Prop
+            </h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              <strong>"Intelligent Efficiency"</strong>
+              <br />
+              Most HMIS are passive record-keepers. Your differentiator is
+              <em>active assistance</em>: predictive alerts, automated
+              summaries, and simplified workflows that respect the clinician's
+              time.
+            </p>
+          </div>
+        </div>
+
+        <!-- Context Block -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+          <p class="text-blue-800 text-sm">
+            <strong>Launch Context:</strong> With 3-4 months remaining, the
+            focus is on high-impact, low-risk features that create a "wow"
+            factor during demos without destabilizing the core Angular/Spring
+            Boot architecture.
+          </p>
+        </div>
+      </section>
+
+      <!-- SECTION: INNOVATIONS (The Core) -->
+      <section id="view-innovations" class="hidden section-fade-in space-y-8">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">
+            Top 8 Strategic Innovations
+          </h2>
+          <p class="text-slate-600">
+            Interact with the matrix below to explore features based on
+            <strong>Impact vs. Effort</strong>.
+            <br />
+            <span class="text-sm bg-sky-100 text-sky-800 px-2 py-0.5 rounded"
+              >Strategy:</span
+            >
+            Focus on "High Impact / Medium Effort" items first.
+          </p>
+        </div>
+
+        <!-- Grid Layout for Chart and List -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Left: Chart -->
+          <div
+            class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col"
+          >
+            <h3 class="text-lg font-semibold text-slate-700 mb-4 text-center">
+              Impact vs. Development Effort Matrix
+            </h3>
+            <div class="chart-container flex-grow">
+              <canvas id="innovationChart"></canvas>
+            </div>
+            <p class="text-xs text-center text-slate-400 mt-2">
+              Click a bubble to highlight the feature details.
+            </p>
+          </div>
+
+          <!-- Right: Details List -->
+          <div
+            class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[500px] overflow-y-auto"
+          >
+            <div id="feature-list" class="space-y-4">
+              <!-- Content populated by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: QUICK WINS -->
+      <section id="view-quickwins" class="hidden section-fade-in space-y-8">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">
+            6 Quick Wins (2-Week Sprints)
+          </h2>
+          <p class="text-slate-600">
+            High-visibility improvements that can be implemented immediately by
+            the frontend/backend teams without architectural changes.
+          </p>
+        </div>
+
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-6"
+          id="quick-wins-container"
+        >
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- SECTION: RISKS -->
+      <section id="view-risks" class="hidden section-fade-in space-y-8">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">
+            Risk Assessment & Mitigation
+          </h2>
+          <p class="text-slate-600">
+            A visual breakdown of potential launch risks and specific technical
+            strategies to address them within the Angular/Spring Boot ecosystem.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <!-- Radar Chart -->
+          <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"
+          >
+            <h3 class="text-lg font-semibold text-slate-700 mb-4 text-center">
+              Risk Dimensions
+            </h3>
+            <div class="chart-container">
+              <canvas id="riskChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Mitigation Accordion -->
+          <div class="space-y-4" id="mitigation-container">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 mt-12">
+      <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+        <p>
+          &copy; 2026 HMIS Strategy Group. Generated for Product Launch
+          Planning.
+        </p>
+      </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+      // --- DATA STORE ---
+      const reportData = {
+        innovations: [
+          {
+            id: 1,
+            title: "Voice-to-Text Clinical Notes",
+            desc: "Integration of medical-grade speech-to-text (e.g., Web Speech API + Medical Dictionary) directly into input fields.",
+            benefit:
+              "Reduces documentation time by 40%. huge doctor delighter.",
+            effort: "Medium",
+            impact: "High",
+            x: 5, // Effort 1-10
+            y: 9, // Impact 1-10
+            color: "rgb(14, 165, 233)", // Sky 500
+          },
+          {
+            id: 2,
+            title: "Predictive Bed Management",
+            desc: "Simple ML model (or heuristic algorithm) to forecast bed availability based on admission/discharge trends.",
+            benefit: "Optimizes occupancy rates and reduces ER wait times.",
+            effort: "High",
+            impact: "High",
+            x: 8,
+            y: 8,
+            color: "rgb(20, 184, 166)", // Teal 500
+          },
+          {
+            id: 3,
+            title: "No-App Patient Portal (WhatsApp)",
+            desc: "Use WhatsApp Business API for appointment reminders, lab reports, and basic queries instead of forcing an app download.",
+            benefit:
+              "Near 100% adoption rate compared to <10% for custom apps.",
+            effort: "Low",
+            impact: "High",
+            x: 3,
+            y: 9,
+            color: "rgb(244, 63, 94)", // Rose 500
+          },
+          {
+            id: 4,
+            title: "Universal Spotlight Search",
+            desc: "Global 'Command-K' search bar to find Patients, Bills, Inventory, or Menu items instantly.",
+            benefit: "Massive UX improvement for power users (admins/nurses).",
+            effort: "Low",
+            impact: "Medium",
+            x: 3,
+            y: 6,
+            color: "rgb(234, 179, 8)", // Yellow 500
+          },
+          {
+            id: 5,
+            title: "Doctor's 'Morning Brief' Dashboard",
+            desc: "Auto-generated summary card for doctors: '5 Critical Patients', '3 Discharges Pending', '2 Abnormal Labs'.",
+            benefit: "Immediate situational awareness upon login.",
+            effort: "Medium",
+            impact: "High",
+            x: 5,
+            y: 8,
+            color: "rgb(139, 92, 246)", // Violet 500
+          },
+          {
+            id: 6,
+            title: "Offline-First Nursing Module",
+            desc: "Service Workers + IndexedDB to allow vitals entry in Wi-Fi dead zones, syncing when online.",
+            benefit:
+              "Critical for large hospital campuses; prevents data loss.",
+            effort: "High",
+            impact: "High",
+            x: 9,
+            y: 9,
+            color: "rgb(249, 115, 22)", // Orange 500
+          },
+          {
+            id: 7,
+            title: "Dynamic Insurance Rules Engine",
+            desc: "Visual builder for claim rules (e.g., 'If Plan=Gold, Co-pay=0'). Decouples logic from code.",
+            benefit:
+              "Reduces claim rejections and billing team dependency on IT.",
+            effort: "High",
+            impact: "Medium",
+            x: 8,
+            y: 6,
+            color: "rgb(99, 102, 241)", // Indigo 500
+          },
+          {
+            id: 8,
+            title: "Smart Inventory (QR Web Scan)",
+            desc: "Mobile web view utilizing camera for QR scanning of stock, no hardware scanners needed.",
+            benefit: "Low-cost inventory tracking for pharmacy and supplies.",
+            effort: "Medium",
+            impact: "Medium",
+            x: 6,
+            y: 5,
+            color: "rgb(16, 185, 129)", // Emerald 500
+          },
+        ],
+        quickWins: [
+          {
+            title: "Dark Mode for Night Shift",
+            desc: "Tailwind makes this easy. Reduces eye strain for night staff.",
+            effort: "S",
+          },
+          {
+            title: "Keyboard Shortcuts",
+            desc: "Add hotkeys for Save (Ctrl+S), New Patient (Alt+N), Search (/) .",
+            effort: "S",
+          },
+          {
+            title: "Drag-and-Drop Calendar",
+            desc: "Implement fullCalendar.js or similar for rescheduling appointments.",
+            effort: "M",
+          },
+          {
+            title: "Role-Based Start Page",
+            desc: "Don't show generic dashboard. Reception sees Scheduler; Admin sees Revenue.",
+            effort: "S",
+          },
+          {
+            title: "Critical Lab Alerts (Toasts)",
+            desc: "Global toast notifications for critical values using WebSocket/SSE.",
+            effort: "M",
+          },
+          {
+            title: "Patient 'Face Sheet' Print",
+            desc: "One-click printable PDF summary of patient demographics & insurance.",
+            effort: "S",
+          },
+        ],
+        risks: [
+          {
+            category: "Security",
+            val: 9,
+            mitigation:
+              "Spring Security audit, HIPAA/GDPR logging, penetration testing.",
+          },
+          {
+            category: "Data Migration",
+            val: 8,
+            mitigation:
+              "Write rigorous ETL scripts now. Dry-run migration 3 times.",
+          },
+          {
+            category: "Regulatory",
+            val: 7,
+            mitigation:
+              "Ensure ICD-10/11 compliance and local tax structures are configurable.",
+          },
+          {
+            category: "User Adoption",
+            val: 6,
+            mitigation:
+              "Focus on UI speed. If it's slower than paper, they won't use it.",
+          },
+          {
+            category: "Scalability",
+            val: 5,
+            mitigation:
+              "Database indexing, Redis caching for frequent lookups.",
+          },
+        ],
+      };
+
+      // --- APP CONTROLLER ---
+      const app = {
+        state: {
+          currentTab: "summary",
+          activeFeatureId: null,
+        },
+
+        init: function () {
+          this.renderInnovations();
+          this.renderQuickWins();
+          this.renderRisks();
+          this.initCharts();
+        },
+
+        switchTab: function (tabId) {
+          // Update State
+          this.state.currentTab = tabId;
+
+          // Update UI: Hide all sections
+          ["summary", "innovations", "quickwins", "risks"].forEach((id) => {
+            document.getElementById(`view-${id}`).classList.add("hidden");
+            document
+              .getElementById(`nav-${id}`)
+              .classList.remove("active-tab", "text-sky-600");
+            document
+              .getElementById(`nav-${id}`)
+              .classList.add("text-slate-500");
+          });
+
+          // Update UI: Show active section
+          const activeSection = document.getElementById(`view-${tabId}`);
+          activeSection.classList.remove("hidden");
+
+          const activeBtn = document.getElementById(`nav-${tabId}`);
+          activeBtn.classList.add("active-tab", "text-sky-600");
+          activeBtn.classList.remove("text-slate-500");
+        },
+
+        // --- RENDER INNOVATIONS ---
+        renderInnovations: function () {
+          const listContainer = document.getElementById("feature-list");
+          listContainer.innerHTML = reportData.innovations
+            .map(
+              (feat) => `
+                    <div id="feat-card-${feat.id}" class="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer" onclick="app.highlightFeature(${feat.id})">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-slate-800">${feat.title}</h4>
+                            <span class="text-xs font-semibold px-2 py-1 rounded bg-slate-100 text-slate-600">Effort: ${feat.effort}</span>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-2">${feat.desc}</p>
+                        <div class="text-xs text-sky-600 font-medium">Benefits: ${feat.benefit}</div>
+                    </div>
+                `,
+            )
+            .join("");
+        },
+
+        highlightFeature: function (id) {
+          // Reset styles
+          document.querySelectorAll("#feature-list > div").forEach((el) => {
+            el.classList.remove(
+              "bg-sky-50",
+              "border-sky-500",
+              "ring-1",
+              "ring-sky-500",
+            );
+            el.classList.add("border-slate-200");
+          });
+
+          // Highlight specific card
+          const card = document.getElementById(`feat-card-${id}`);
+          if (card) {
+            card.classList.remove("border-slate-200");
+            card.classList.add(
+              "bg-sky-50",
+              "border-sky-500",
+              "ring-1",
+              "ring-sky-500",
+            );
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        },
+
+        // --- RENDER QUICK WINS ---
+        renderQuickWins: function () {
+          const container = document.getElementById("quick-wins-container");
+          container.innerHTML = reportData.quickWins
+            .map(
+              (win, index) => `
+                    <div class="flex items-start p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                        <div class="flex-shrink-0 mt-1">
+                            <div class="h-6 w-6 rounded-full border-2 border-green-500 flex items-center justify-center text-green-600 font-bold text-xs">
+                                ${index + 1}
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-slate-800">${win.title}</h4>
+                                <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">2 Weeks</span>
+                            </div>
+                            <p class="text-sm text-slate-600 mt-1">${win.desc}</p>
+                        </div>
+                    </div>
+                `,
+            )
+            .join("");
+        },
+
+        // --- RENDER RISKS ---
+        renderRisks: function () {
+          const container = document.getElementById("mitigation-container");
+          container.innerHTML = reportData.risks
+            .map(
+              (risk) => `
+                    <div class="bg-white border-l-4 ${risk.val > 7 ? "border-red-500" : "border-amber-400"} p-4 rounded shadow-sm">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="font-bold text-slate-800">${risk.category}</h4>
+                            <span class="text-xs font-bold ${risk.val > 7 ? "text-red-500" : "text-amber-500"}">Risk Level: ${risk.val}/10</span>
+                        </div>
+                        <p class="text-sm text-slate-600"><span class="font-semibold">Mitigation:</span> ${risk.mitigation}</p>
+                    </div>
+                `,
+            )
+            .join("");
+        },
+
+        // --- INITIALIZE CHARTS ---
+        initCharts: function () {
+          // 1. Innovation Matrix (Scatter)
+          const ctxInn = document
+            .getElementById("innovationChart")
+            .getContext("2d");
+          new Chart(ctxInn, {
+            type: "bubble",
+            data: {
+              datasets: reportData.innovations.map((f) => ({
+                label: f.title,
+                data: [{ x: f.x, y: f.y, r: 10 }], // r is radius
+                backgroundColor: f.color,
+                hoverRadius: 12,
+              })),
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      return context.dataset.label;
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: "Development Effort (Low → High)",
+                  },
+                  min: 0,
+                  max: 10,
+                  grid: { color: "#f1f5f9" },
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: "Strategic Impact (Low → High)",
+                  },
+                  min: 0,
+                  max: 10,
+                  grid: { color: "#f1f5f9" },
+                },
+              },
+              onClick: (e, activeEls) => {
+                if (activeEls.length > 0) {
+                  const index = activeEls[0].datasetIndex;
+                  const featureId = reportData.innovations[index].id;
+                  this.highlightFeature(featureId);
+                }
+              },
+            },
+          });
+
+          // 2. Risk Radar
+          const ctxRisk = document.getElementById("riskChart").getContext("2d");
+          new Chart(ctxRisk, {
+            type: "radar",
+            data: {
+              labels: reportData.risks.map((r) => r.category),
+              datasets: [
+                {
+                  label: "Risk Severity",
+                  data: reportData.risks.map((r) => r.val),
+                  fill: true,
+                  backgroundColor: "rgba(244, 63, 94, 0.2)", // Rose 500 transparent
+                  borderColor: "rgb(244, 63, 94)",
+                  pointBackgroundColor: "rgb(244, 63, 94)",
+                  pointBorderColor: "#fff",
+                  pointHoverBackgroundColor: "#fff",
+                  pointHoverBorderColor: "rgb(244, 63, 94)",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                r: {
+                  angleLines: { color: "#cbd5e1" },
+                  grid: { color: "#e2e8f0" },
+                  pointLabels: {
+                    font: { size: 12, weight: "bold" },
+                    color: "#475569",
+                  },
+                  suggestMin: 0,
+                  suggestedMax: 10,
+                },
+              },
+            },
+          });
+        },
+      };
+
+      // Boot the app
+      document.addEventListener("DOMContentLoaded", () => {
+        app.init();
+      });
+    </script>
+  </body>
+</html>
